@@ -1,64 +1,41 @@
-import { useState, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { createContext, useState } from "react";
+import axios from "../api/axios";
 
-const Login = () => {
-  const { login } = useContext(AuthContext);
+export const AuthContext = createContext();
 
-  const [form, setForm] = useState({
-    email: "",
-    password: ""
-  });
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user")) || null
+  );
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const login = async (email, password) => {
+    try {
+      const res = await axios.post("/auth/login", {
+        email,
+        password,
+      });
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      setUser(res.data.user);
+
+      window.location.href = "/dashboard";
+    } catch (err) {
+      alert("Invalid credentials");
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await login(form.email, form.password);
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+    window.location.href = "/";
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#1e293b] text-white">
-
-      <div className="w-[420px] bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-3xl shadow-2xl">
-
-        <h1 className="text-3xl font-bold mb-8 text-center">
-          Tenant<span className="text-cyan-400">Pro</span>
-        </h1>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:border-indigo-400"
-            value={form.email}
-            onChange={handleChange}
-          />
-
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:border-indigo-400"
-            value={form.password}
-            onChange={handleChange}
-          />
-
-          <button
-            type="submit"
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 hover:opacity-90 transition"
-          >
-            Login
-          </button>
-
-        </form>
-
-      </div>
-    </div>
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
-
-export default Login;
