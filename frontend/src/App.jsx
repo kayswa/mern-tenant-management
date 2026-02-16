@@ -10,10 +10,11 @@ import Roles from "./pages/Roles";
 import Sites from "./pages/Sites";
 
 export default function App() {
+  console.log("API URL:", import.meta.env.VITE_API_URL);
   return (
-    <AuthProvider>
+    
       <BrowserRouter>
-
+<AuthProvider>
         {/* Global Toast Notifications */}
         <Toaster
           position="top-right"
@@ -69,7 +70,8 @@ export default function App() {
           />
 
         </Routes>
+        </AuthProvider>
       </BrowserRouter>
-    </AuthProvider>
+    
   );
 }
