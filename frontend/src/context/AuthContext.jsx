@@ -15,14 +15,17 @@ export const AuthProvider = ({ children }) => {
         password,
       });
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      const { token, user } = res.data;
 
-      setUser(res.data.user);
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      setUser(user);
 
       window.location.href = "/dashboard";
     } catch (err) {
       alert("Invalid credentials");
+      console.error(err);
     }
   };
 
