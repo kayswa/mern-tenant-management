@@ -32,12 +32,16 @@ app.use("/api/sites", require("./routes/sites"));
 app.use("/api/dashboard", require("./routes/dashboard"));
 app.use("/api/timezones", require("./routes/timezone"));
 
-// ================= SEED ADMIN (TEMPORARY) =================
+// ===================================================
+// TEMP ADMIN CREATION (Run Once)
+// ===================================================
 app.get("/seed-admin", async (req, res) => {
   try {
-    const existing = await User.findOne({ email: "admin@test.com" });
+    const existingUser = await User.findOne({
+      email: "admin@test.com",
+    });
 
-    if (existing) {
+    if (existingUser) {
       return res.json({ message: "Admin already exists" });
     }
 
@@ -47,14 +51,46 @@ app.get("/seed-admin", async (req, res) => {
       name: "Admin",
       email: "admin@test.com",
       password: hashedPassword,
+      status: "active",
     });
 
     res.json({
       message: "Admin created successfully",
       admin,
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+});
+
+// ===================================================
+// FORCE RESET ADMIN PASSWORD (Temporary)
+// ===================================================
+app.get("/reset-admin", async (req, res) => {
+  try {
+    const hashedPassword = await bcrypt.hash("123456", 10);
+
+    const updated = await User.findOneAndUpdate(
+      { email: "admin@test.com" },
+      { password: hashedPassword },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({
+        message: "Admin not found",
+      });
+    }
+
+    res.json({
+      message: "Password reset successfully to 123456",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
   }
 });
 
