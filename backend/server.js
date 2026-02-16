@@ -10,21 +10,27 @@ const User = require("./models/User");
 
 const app = express();
 
-// ================= DATABASE =================
+/* ===============================
+   DATABASE CONNECTION
+================================= */
 connectDB();
 
-// ================= MIDDLEWARE =================
+/* ===============================
+   MIDDLEWARE
+================================= */
 app.use(express.json());
 app.use(cookieParser());
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
-    credentials: true,
+    origin: process.env.CLIENT_URL || "*",
+    credentials: true
   })
 );
 
-// ================= ROUTES =================
+/* ===============================
+   ROUTES
+================================= */
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/roles", require("./routes/roles"));
@@ -32,82 +38,57 @@ app.use("/api/sites", require("./routes/sites"));
 app.use("/api/dashboard", require("./routes/dashboard"));
 app.use("/api/timezones", require("./routes/timezone"));
 
-// ===================================================
-// TEMP ADMIN CREATION (Run Once)
-// ===================================================
-app.get("/seed-admin", async (req, res) => {
+/* ===============================
+   FORCE PASSWORD RESET ROUTE
+   (TEMPORARY – REMOVE AFTER LOGIN WORKS)
+================================= */
+app.get("/force-reset", async (req, res) => {
   try {
-    const existingUser = await User.findOne({
-      email: "admin@test.com",
+    const user = await User.findOne({
+      email: "admin2@test.com" // <-- CHANGE IF DIFFERENT
     });
 
-    if (existingUser) {
-      return res.json({ message: "Admin already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash("123456", 10);
-
-    const admin = await User.create({
-      name: "Admin",
-      email: "admin@test.com",
-      password: hashedPassword,
-      status: "active",
-    });
-
-    res.json({
-      message: "Admin created successfully",
-      admin,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-});
-
-// ===================================================
-// FORCE RESET ADMIN PASSWORD (Temporary)
-// ===================================================
-app.get("/reset-admin", async (req, res) => {
-  try {
-    const hashedPassword = await bcrypt.hash("123456", 10);
-
-    const updated = await User.findOneAndUpdate(
-      { email: "admin@test.com" },
-      { password: hashedPassword },
-      { new: true }
-    );
-
-    if (!updated) {
+    if (!user) {
       return res.status(404).json({
-        message: "Admin not found",
+        message: "Admin not found"
       });
     }
 
+    const hashedPassword = await bcrypt.hash("123456", 10);
+
+    user.password = hashedPassword;
+    await user.save();
+
     res.json({
-      message: "Password reset successfully to 123456",
+      message: "Password reset successfully to 123456"
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message,
+      message: error.message
     });
   }
 });
 
-// ================= HEALTH CHECK =================
+/* ===============================
+   HEALTH CHECK
+================================= */
 app.get("/", (req, res) => {
-  res.send("Tenant Management API Running");
+  res.send("Tenant Management API Running 🚀");
 });
 
-// ================= ERROR HANDLER =================
+/* ===============================
+   GLOBAL ERROR HANDLER
+================================= */
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
-    message: "Internal Server Error",
+    message: "Internal Server Error"
   });
 });
 
-// ================= SERVER =================
+/* ===============================
+   SERVER START
+================================= */
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
